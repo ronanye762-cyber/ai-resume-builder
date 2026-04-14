@@ -4,6 +4,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ── 赛博配色 Token（Tailwind v4 在 @theme 中直接定义颜色值） ── */
+@theme {
+  --color-cyber-bg:    #0A0E17;
+  --color-neon-purple: #BF00FF;
+  --color-neon-cyan:   #00FFFF;
+  --color-cyber-card:  #12101F;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -127,4 +135,252 @@
   html {
     @apply font-sans;
   }
+}
+
+/* 简历姓名更新时的淡入动画 */
+@keyframes resumeFieldFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.resume-field-updated {
+  animation: resumeFieldFadeIn 0.35s ease-out;
+}
+
+/* ── 霓虹发光工具类 ─────────────────────────────────────────── */
+.neon-glow-purple {
+  filter: drop-shadow(0 0 6px #BF00FF) drop-shadow(0 0 18px rgba(191, 0, 255, 0.5));
+}
+.neon-glow-cyan {
+  filter: drop-shadow(0 0 6px #00FFFF) drop-shadow(0 0 18px rgba(0, 255, 255, 0.5));
+}
+
+/* ── 赛博卡片（玻璃拟态 + 边框光晕） ─────────────────────────── */
+.card-cyber-purple {
+  background: rgba(18, 16, 31, 0.8);
+  border: 1px solid rgba(191, 0, 255, 0.25);
+  box-shadow: 0 0 18px rgba(191, 0, 255, 0.12), inset 0 0 20px rgba(191, 0, 255, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.25s ease;
+}
+.card-cyber-purple:hover {
+  border-color: rgba(191, 0, 255, 0.65);
+  box-shadow: 0 0 30px rgba(191, 0, 255, 0.35), 0 0 70px rgba(191, 0, 255, 0.15),
+              inset 0 0 24px rgba(191, 0, 255, 0.07);
+  transform: translateY(-4px);
+}
+
+.card-cyber-cyan {
+  background: rgba(18, 16, 31, 0.8);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  box-shadow: 0 0 18px rgba(0, 255, 255, 0.1), inset 0 0 20px rgba(0, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.25s ease;
+}
+.card-cyber-cyan:hover {
+  border-color: rgba(0, 255, 255, 0.6);
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.3), 0 0 70px rgba(0, 255, 255, 0.12),
+              inset 0 0 24px rgba(0, 255, 255, 0.06);
+  transform: translateY(-4px);
+}
+
+/* ── 赛博背景网格 ─────────────────────────────────────────────── */
+.cyber-grid {
+  background-image:
+    linear-gradient(rgba(191, 0, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(191, 0, 255, 0.04) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* ── 霓虹渐变文字 ─────────────────────────────────────────────── */
+.text-neon-gradient {
+  background: linear-gradient(135deg, #BF00FF 0%, #7B2FFF 40%, #00FFFF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── 赛博子页面面板（暗色玻璃拟态）────────────────────────────── */
+.panel-cyber-purple {
+  background: rgba(12, 8, 24, 0.92);
+  border-right: 1px solid rgba(191, 0, 255, 0.18);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.panel-cyber-cyan {
+  background: rgba(8, 18, 24, 0.92);
+  border-right: 1px solid rgba(0, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.header-cyber {
+  background: rgba(10, 14, 23, 0.98);
+  border-bottom: 1px solid rgba(191, 0, 255, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.header-cyber-cyan {
+  background: rgba(10, 14, 23, 0.98);
+  border-bottom: 1px solid rgba(0, 255, 255, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── 全息蓝图面板（暗色 + 紫色霓虹边框发光） ─────────────────── */
+.paper-glow {
+  background: rgba(19, 17, 28, 0.88);
+  border: 1px solid rgba(191, 0, 255, 0.22);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    0 0 0 1px rgba(191, 0, 255, 0.08),
+    0 0 30px rgba(191, 0, 255, 0.10),
+    inset 0 0 40px rgba(191, 0, 255, 0.03),
+    0 24px 64px rgba(0, 0, 0, 0.55);
+}
+/* 青色版（润色页结果卡） */
+.paper-glow-cyan {
+  background: rgba(8, 20, 28, 0.88);
+  border: 1px solid rgba(0, 255, 255, 0.18);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 255, 0.06),
+    0 0 28px rgba(0, 255, 255, 0.09),
+    inset 0 0 40px rgba(0, 255, 255, 0.02),
+    0 24px 64px rgba(0, 0, 0, 0.55);
+}
+
+/* ── 命令行输入框 ────────────────────────────────────────────── */
+.terminal-input {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(191, 0, 255, 0.3);
+  color: #e2e8f0;
+  font-family: var(--font-geist-mono), monospace;
+  caret-color: #00ff88;
+  transition: border-color 0.2s;
+}
+.terminal-input:focus {
+  outline: none;
+  border-color: rgba(191, 0, 255, 0.7);
+  box-shadow: 0 0 12px rgba(191, 0, 255, 0.2);
+}
+.terminal-input::placeholder {
+  color: rgba(148, 163, 184, 0.4);
+}
+.terminal-input-cyan {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(0, 255, 255, 0.25);
+  color: #e2e8f0;
+  caret-color: #00ffff;
+  transition: border-color 0.2s;
+}
+.terminal-input-cyan:focus {
+  outline: none;
+  border-color: rgba(0, 255, 255, 0.6);
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.15);
+}
+.terminal-input-cyan::placeholder {
+  color: rgba(148, 163, 184, 0.4);
+}
+
+/* ── AhaCard 呼吸发光动画 ─────────────────────────────────── */
+@keyframes ahaBreath {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(191, 0, 255, 0.3),
+      0 0 16px rgba(191, 0, 255, 0.15),
+      0 0 40px rgba(191, 0, 255, 0.06),
+      inset 0 0 20px rgba(191, 0, 255, 0.04);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(191, 0, 255, 0.7),
+      0 0 28px rgba(191, 0, 255, 0.35),
+      0 0 60px rgba(191, 0, 255, 0.14),
+      inset 0 0 28px rgba(191, 0, 255, 0.08);
+  }
+}
+.aha-card-glow {
+  animation: ahaBreath 2.8s ease-in-out infinite;
+}
+
+/* ── 章节出现动画（commit 时触发） ──────────────────────────── */
+@keyframes sectionReveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+.section-reveal {
+  animation: sectionReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── 打印样式（导出 PDF 用） ─────────────────────────────────── */
+@media print {
+  /* 重置背景为白色 */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #1a1a2e !important;
+    font-family: "Arial", sans-serif;
+    font-size: 12pt;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* 隐藏左侧输入面板、标题栏、按钮、背景装饰 */
+  .print\:hidden,
+  [class*="panel-cyber"],
+  [class*="header-cyber"],
+  [class*="cyber-grid"] {
+    display: none !important;
+  }
+
+  /* 右侧结果区铺满整个页面 */
+  .print\:block { display: block !important; }
+  .print\:h-auto { height: auto !important; }
+  .print\:overflow-visible { overflow: visible !important; }
+  .print\:p-8 { padding: 2rem !important; }
+
+  /* 结果卡片：白底黑字 */
+  .paper-glow-cyan {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    color: #1a1a2e !important;
+    max-width: 100% !important;
+  }
+
+  /* 文字颜色统一为深色 */
+  .text-cyan-100,
+  .text-cyan-100\/90,
+  .text-amber-100,
+  .text-red-100,
+  .text-white\/30,
+  .text-white\/40,
+  [class*="text-white"] {
+    color: #374151 !important;
+  }
+
+  /* 仪表盘在打印时简化 */
+  svg text { fill: #1a1a2e !important; }
+
+  /* 列表项目 */
+  ul li, pre { color: #374151 !important; }
+
+  /* 分页控制 */
+  #polished-resume-text { page-break-before: always; }
 }
