@@ -103,8 +103,6 @@ export async function POST(req: Request) {
       ],
       max_tokens: 1200,
       stream: false,
-      // @ts-expect-error zhipuai SDK 支持 response_format
-      response_format: { type: "json_object" },
     });
 
     const raw =

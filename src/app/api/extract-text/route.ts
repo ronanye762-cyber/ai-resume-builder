@@ -58,7 +58,7 @@ async function zhipuFetch(
 async function extractTextFromPDF(buffer: Buffer, fileName: string): Promise<string> {
   // Step 1：上传
   const form = new FormData();
-  form.append('file', new Blob([buffer], { type: 'application/pdf' }), fileName);
+  form.append('file', new Blob([new Uint8Array(buffer)], { type: 'application/pdf' }), fileName);
   form.append('purpose', 'file-extract');
 
   const uploadRes = await zhipuFetch('/files', { method: 'POST', body: form });
@@ -146,11 +146,12 @@ Step 0【有效性检查】：判断图片是否包含简历或招聘 JD 相关�
   const raw = data.choices[0]?.message?.content?.trim() ?? '';
 
   // 解析 JSON 响应（兜底：GLM-4V 有时直接输出纯文本而非 JSON）
-  let parsed: { is_valid?: boolean; error_code?: string; text?: string } | null = null;
+  type OcrJson = { is_valid?: boolean; error_code?: string; text?: string };
+  let parsed: OcrJson | null = null;
   try {
     const cleaned = raw.replace(/```json|```/gi, '').trim();
     const match = cleaned.match(/\{[\s\S]*\}/);
-    if (match) parsed = JSON.parse(match[0]) as typeof parsed;
+    if (match) parsed = JSON.parse(match[0]) as OcrJson;
   } catch {
     // 解析失败 → 视为有效图片，直接用原始文本（兜底策略）
     return raw;
