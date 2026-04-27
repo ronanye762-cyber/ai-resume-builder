@@ -1,7 +1,9 @@
 import { ZhipuAI, type ChatCompletionMessageParams } from "zhipuai";
 import type { InterviewPhase } from "@/store/useResumeStore";
 
-const client = new ZhipuAI({ apiKey: process.env.ZHIPU_API_KEY });
+let _c: ZhipuAI | null = null;
+function getClient() { if (!_c) _c = new ZhipuAI({ apiKey: process.env.ZHIPU_API_KEY ?? '' }); return _c; }
+const client = new Proxy({} as ZhipuAI, { get(_t, p) { return getClient()[p as keyof ZhipuAI]; } });
 
 // ─────────────────────────────────────────────────────────────
 // 每个阶段的专项挖掘指引

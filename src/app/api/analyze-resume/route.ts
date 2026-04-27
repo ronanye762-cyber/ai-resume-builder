@@ -43,8 +43,15 @@ export type PipelineMsg = ProgressMsg | ResultMsg | ErrorMsg;
 /** @deprecated 请改用 RefineAdviceItem */
 export type PolishedItem = RefineAdviceItem;
 
-// ── 智谱客户端 ────────────────────────────────────────────────
-const client = new ZhipuAI({ apiKey: process.env.ZHIPU_API_KEY });
+// ── 智谱客户端（惰性初始化，避免 build 时 env 缺失崩溃）────────
+let _zhipuClient: ZhipuAI | null = null;
+function getZhipuClient() {
+  if (!_zhipuClient) _zhipuClient = new ZhipuAI({ apiKey: process.env.ZHIPU_API_KEY ?? '' });
+  return _zhipuClient;
+}
+const client = new Proxy({} as ZhipuAI, {
+  get(_t, prop) { return getZhipuClient()[prop as keyof ZhipuAI]; },
+});
 
 // ── 加权公式：Score = Σ(Wi × Si) / Σ(Wi) ─────────────────────
 // 核心项 W=1.0 | 加分项 W=0.6 | 了解项 W=0.3

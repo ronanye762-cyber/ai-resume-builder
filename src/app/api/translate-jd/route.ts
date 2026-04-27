@@ -7,7 +7,9 @@ export type TranslatedJd = {
   toxic_comment: string;
 };
 
-const client = new ZhipuAI({ apiKey: process.env.ZHIPU_API_KEY });
+let _c: ZhipuAI | null = null;
+function getClient() { if (!_c) _c = new ZhipuAI({ apiKey: process.env.ZHIPU_API_KEY ?? '' }); return _c; }
+const client = new Proxy({} as ZhipuAI, { get(_t, p) { return getClient()[p as keyof ZhipuAI]; } });
 
 // ── 暴力 JSON 解析（与 analyze-resume 同款三层兜底）────────────
 function robustJSONParse(raw: string): Record<string, unknown> | null {

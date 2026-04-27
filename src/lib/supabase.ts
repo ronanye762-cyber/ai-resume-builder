@@ -1,17 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl  = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// 惰性单例：避免 build 时因 env 缺失而崩溃
+let _client: ReturnType<typeof createClient> | null = null;
 
-if (!supabaseUrl || !supabaseAnon) {
-  throw new Error(
-    '缺少 Supabase 环境变量，请在 .env.local 中配置 ' +
-    'NEXT_PUBLIC_SUPABASE_URL 和 NEXT_PUBLIC_SUPABASE_ANON_KEY'
-  );
+function getClient() {
+  if (_client) return _client;
+  const url  = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
+  _client = createClient(url, anon);
+  return _client;
 }
 
 /** 浏览器端单例（带 RLS，使用当前登录用户的权限） */
-export const supabase = createClient(supabaseUrl, supabaseAnon);
+export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
+  get(_t, prop) {
+    return getClient()[prop as keyof ReturnType<typeof createClient>];
+  },
+});
 
 /** 数据库行类型 */
 export type Assessment = {
