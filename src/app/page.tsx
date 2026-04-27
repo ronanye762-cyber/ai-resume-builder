@@ -1,155 +1,172 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase-server";
 
-// ── 雷达图标（SVG） ───────────────────────────────────────────
-function RadarIcon({ className }: { className?: string }) {
+function ChatIcon() {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M12 12 L19.07 4.93" />
-      <path d="M12 12 m0 0 a2 2 0 1 0 .01 0" />
-      <circle cx="12" cy="12" r="4.5" />
-      <circle cx="12" cy="12" r="8.5" />
-      <circle cx="12" cy="12" r="11" strokeOpacity="0.3" />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+      className="size-6">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      <path d="M8 10h8M8 14h5" />
     </svg>
   );
 }
 
-// ── 魔棒图标（SVG） ───────────────────────────────────────────
-function WandIcon({ className }: { className?: string }) {
+function MatchIcon() {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z" />
-      <path d="m14 7 3 3" />
-      <path d="M5 6v4" />
-      <path d="M19 14v4" />
-      <path d="M10 2v2" />
-      <path d="M7 8H3" />
-      <path d="M21 16h-4" />
-      <path d="M11 3H9" />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+      className="size-6">
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.35-4.35" />
+      <path d="M11 8v6M8 11h6" />
     </svg>
   );
 }
 
-// ── 首页 ──────────────────────────────────────────────────────
-export default function HomePage() {
+function ArrowRight() {
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-cyber-bg px-4 py-16">
-      {/* 背景网格 */}
-      <div className="pointer-events-none absolute inset-0 cyber-grid opacity-60" />
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      className="transition-transform duration-300 group-hover:translate-x-1">
+      <path d="M5 12h14M12 5l7 7-7 7" />
+    </svg>
+  );
+}
 
-      {/* 背景光晕球 */}
+export default async function HomePage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return (
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-20">
+
+      {/* 背景装饰光圈 */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-32 top-1/3 h-[480px] w-[480px] rounded-full bg-neon-purple/8 blur-[120px]" />
-        <div className="absolute -right-32 top-1/2 h-[400px] w-[400px] rounded-full bg-neon-cyan/6 blur-[100px]" />
-        <div className="absolute bottom-0 left-1/2 h-64 w-96 -translate-x-1/2 rounded-full bg-neon-purple/5 blur-3xl" />
+        <div className="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-m-mauve/10 blur-[100px]" />
+        <div className="absolute bottom-0 right-1/4 h-80 w-80 rounded-full bg-m-sage/12 blur-[80px]" />
+        <div className="absolute top-1/2 left-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-m-slate/8 blur-[120px]" />
       </div>
 
-      {/* ── 标题区 ── */}
-      <div className="relative mb-14 text-center">
-        {/* 顶部标签 */}
-        <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-neon-purple/30 bg-neon-purple/10 px-4 py-1.5">
-          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-neon-purple" />
-          <span className="text-xs font-medium tracking-widest text-neon-purple/90 uppercase">
-            AI · 求职助手
+      {/* ── 顶部 Badge ── */}
+      <div className="relative mb-10 inline-flex items-center gap-2 rounded-full glass-pill px-5 py-2">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-m-sage" />
+        <span className="text-xs font-medium tracking-[0.2em] text-m-ink-2 uppercase">
+          AI · 简历匹配与精修引擎
+        </span>
+      </div>
+
+      {/* ── Hero 标题区 ── */}
+      <div className="relative mb-16 text-center">
+        <h1 className="text-5xl font-light tracking-tight text-m-ink sm:text-6xl">
+          让经历
+          <span className="relative mx-2 font-normal">
+            <span className="text-neon-gradient">说话</span>
           </span>
-        </div>
-
-        <h1 className="text-5xl font-extrabold tracking-tight sm:text-6xl">
-          <span className="text-neon-gradient">AI 简历生成器</span>
+          <br className="sm:hidden" />
+          让 AI
+          <span className="relative mx-2 font-normal">
+            <span className="text-neon-gradient">发光</span>
+          </span>
         </h1>
-
-        <p className="mt-4 text-base text-slate-400">
-          让经历说话，让 AI 发光
-        </p>
-        <p className="mt-1.5 text-sm text-slate-600">
-          专为应届生设计 · 从零挖掘 · 智能匹配 · 一键润色
+        <p className="mt-6 text-base font-light leading-relaxed text-m-ink-2 sm:text-lg">
+          专为求职者设计 · 从零挖掘经历 · 智能匹配 JD · 精准润色简历
         </p>
       </div>
 
-      {/* ── 功能卡片 ── */}
-      <div className="relative flex w-full max-w-3xl flex-col gap-5 sm:flex-row">
-        {/* ── 卡片 A：经历挖掘（霓虹紫） ── */}
+      {/* ── 功能卡片区 ── */}
+      <div className="relative flex w-full max-w-2xl flex-col gap-5 sm:flex-row">
+
+        {/* 卡片 A：AI 对话挖掘 */}
         <Link
-          href="/mining"
-          className="card-cyber-purple group flex flex-1 flex-col rounded-2xl p-8 no-underline"
+          href="/chat"
+          className="glass-card group flex flex-1 flex-col rounded-3xl p-8 no-underline"
         >
-          {/* 图标 */}
-          <div className="mb-6 flex size-14 items-center justify-center rounded-xl border border-neon-purple/30 bg-neon-purple/10">
-            <RadarIcon className="size-7 text-neon-purple neon-glow-purple" />
+          <div className="mb-6 flex size-12 items-center justify-center rounded-2xl bg-m-mauve/12 text-m-mauve ring-1 ring-m-mauve/20">
+            <ChatIcon />
           </div>
 
-          {/* 文案 */}
-          <h2 className="mb-3 text-xl font-bold text-white">
-            个人经历挖掘
+          <h2 className="mb-2.5 text-lg font-medium text-m-ink">
+            经历挖掘生成
           </h2>
-          <p className="flex-1 text-sm leading-relaxed text-slate-400">
-            AI 职业教练通过温柔对话，逐步挖掘你的校园经历，用 STAR
-            法则将口语描述转化为专业简历语言，实时生成简历预览。
+          <p className="flex-1 text-sm leading-relaxed text-m-ink-2">
+            没有简历也没关系。AI 扮演资深大厂 HR，通过单轮单问的自然对话，
+            逐步挖掘你的校园与实习经历，实时生成专业简历预览。
           </p>
 
-          {/* CTA */}
-          <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-neon-purple transition-gap group-hover:gap-3">
-            开始挖掘
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-              fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-              className="transition-transform group-hover:translate-x-1">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
+          <div className="mt-7 flex items-center gap-2 text-sm font-medium text-m-mauve">
+            开始对话
+            <ArrowRight />
           </div>
         </Link>
 
-        {/* ── 卡片 B：简历润色（电光青） ── */}
+        {/* 卡片 B：简历匹配润色 */}
         <Link
-          href="/polishing"
-          className="card-cyber-cyan group flex flex-1 flex-col rounded-2xl p-8 no-underline"
+          href="/match"
+          className="glass-card group flex flex-1 flex-col rounded-3xl p-8 no-underline"
         >
-          {/* 图标 */}
-          <div className="mb-6 flex size-14 items-center justify-center rounded-xl border border-neon-cyan/30 bg-neon-cyan/10">
-            <WandIcon className="size-7 text-neon-cyan neon-glow-cyan" />
+          <div className="mb-6 flex size-12 items-center justify-center rounded-2xl bg-m-sage/12 text-m-sage ring-1 ring-m-sage/20">
+            <MatchIcon />
           </div>
 
-          {/* 文案 */}
-          <h2 className="mb-3 text-xl font-bold text-white">
-            简历优化润色
+          <h2 className="mb-2.5 text-lg font-medium text-m-ink">
+            简历匹配润色
           </h2>
-          <p className="flex-1 text-sm leading-relaxed text-slate-400">
-            上传简历（PDF / 图片）或直接粘贴文字，再粘贴目标 JD，AI
-            即时评分并给出针对性的优势分析、缺口警告与润色示例。
+          <p className="flex-1 text-sm leading-relaxed text-m-ink-2">
+            粘贴简历与目标 JD，AI 使用三级加权矩阵精准计算匹配分，
+            并输出红绿 Diff 润色建议，一键复制，无缝替换。
           </p>
 
-          {/* CTA */}
-          <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-neon-cyan transition-gap group-hover:gap-3">
-            开始润色
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-              fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-              className="transition-transform group-hover:translate-x-1">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
+          <div className="mt-7 flex items-center gap-2 text-sm font-medium text-m-sage">
+            开始匹配
+            <ArrowRight />
           </div>
         </Link>
       </div>
 
-      {/* 底部小字 */}
-      <p className="relative mt-12 text-center text-xs text-slate-700">
-        数据仅在本地会话中保留，不会上传至任何第三方
-      </p>
+      {/* ── 特性标签行 ── */}
+      <div className="relative mt-12 flex flex-wrap items-center justify-center gap-3">
+        {[
+          { label: "三级加权矩阵评分", color: "text-m-mauve" },
+          { label: "行级 Diff 对比视图", color: "text-m-sage" },
+          { label: "OCR 图片识别", color: "text-m-slate" },
+          { label: "情绪化分数包装", color: "text-m-rose" },
+        ].map((tag) => (
+          <span
+            key={tag.label}
+            className="glass-pill rounded-full px-3 py-1 text-xs text-m-ink-2"
+          >
+            <span className={`mr-1.5 ${tag.color}`}>·</span>
+            {tag.label}
+          </span>
+        ))}
+      </div>
+
+      {/* 登录态入口区 */}
+      <div className="relative mt-10 flex items-center gap-3">
+        {user ? (
+          <>
+            <Link
+              href="/history"
+              className="flex items-center gap-2 rounded-full glass-pill px-5 py-2 text-xs font-medium text-m-ink-2 hover:text-m-mauve transition-colors"
+            >
+              <span className="text-m-mauve">◈</span>
+              我的评估记录
+              <span className="text-m-ink-4">→</span>
+            </Link>
+            <span className="text-[11px] text-m-ink-4 font-mono truncate max-w-[140px]">
+              {user.email}
+            </span>
+          </>
+        ) : (
+          <Link
+            href="/login"
+            className="flex items-center gap-2 rounded-full glass-pill px-5 py-2 text-xs font-medium text-m-ink-2 hover:text-m-mauve transition-colors"
+          >
+            <span className="text-m-mauve">→</span>
+            登录 · 保存记录
+          </Link>
+        )}
+      </div>
     </main>
   );
 }

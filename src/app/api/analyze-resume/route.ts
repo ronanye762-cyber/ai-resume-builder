@@ -1,13 +1,22 @@
 import { ZhipuAI } from "zhipuai";
 
-// ── 对外导出类型（前端共享） ───────────────────────────────────
+// ── 对外导出类型 ──────────────────────────────────────────────
 
 export type ProgressMsg = {
   type: "progress";
   label: string;
 };
 
-export type PolishedItem = {
+/** 加权矩阵中的单项条目 */
+export type WeightMatrixItem = {
+  keyword: string;
+  category: "core" | "bonus" | "awareness";
+  weight: 1.0 | 0.6 | 0.3;
+  score: number; // 0-100：简历对该项的满足度
+};
+
+/** 靶向润色建议单条 */
+export type RefineAdviceItem = {
   original_text: string;
   polished_text: string;
   reason: string;
@@ -15,38 +24,60 @@ export type PolishedItem = {
 
 export type ResultMsg = {
   type: "result";
-  score: number;           // 余弦相似度映射的客观分数
+  total_score: number;            // 加权公式计算结果
+  vector_score: number | null;    // 余弦向量辅助分（可为 null）
+  weight_matrix: WeightMatrixItem[];
+  missing_skills: string[];
+  refine_advice: RefineAdviceItem[];
+  // 向后兼容字段（旧 PolishingView 使用）
+  score: number;
   global_advice: string;
-  polished_items: PolishedItem[];
+  polished_items: RefineAdviceItem[];
   jd_missing_gap: string[];
 };
 
 export type ErrorMsg = { type: "error"; message: string };
 export type PipelineMsg = ProgressMsg | ResultMsg | ErrorMsg;
 
+// ── 向后兼容别名（旧 PolishingView 仍在使用）─────────────────
+/** @deprecated 请改用 RefineAdviceItem */
+export type PolishedItem = RefineAdviceItem;
+
 // ── 智谱客户端 ────────────────────────────────────────────────
 const client = new ZhipuAI({ apiKey: process.env.ZHIPU_API_KEY });
 
-// ── 数学工具：余弦相似度 ──────────────────────────────────────
+// ── 加权公式：Score = Σ(Wi × Si) / Σ(Wi) ─────────────────────
+// 核心项 W=1.0 | 加分项 W=0.6 | 了解项 W=0.3
+const WEIGHT_MAP: Record<WeightMatrixItem["category"], number> = {
+  core:      1.0,
+  bonus:     0.6,
+  awareness: 0.3,
+};
+
+function computeWeightedScore(matrix: WeightMatrixItem[]): number {
+  if (!matrix || matrix.length === 0) return 0;
+  let sumWS = 0;
+  let sumW  = 0;
+  for (const item of matrix) {
+    const w = WEIGHT_MAP[item.category] ?? item.weight;
+    sumWS += w * Math.max(0, Math.min(100, item.score));
+    sumW  += w;
+  }
+  return sumW > 0 ? Math.round(sumWS / sumW) : 0;
+}
+
+// ── 向量化与余弦相似度 ────────────────────────────────────────
 function cosineSimilarity(vecA: number[], vecB: number[]): number {
-  let dotProduct = 0;
-  let normA = 0;
-  let normB = 0;
+  let dot = 0, normA = 0, normB = 0;
   for (let i = 0; i < vecA.length; i++) {
-    dotProduct += vecA[i] * vecB[i];
+    dot   += vecA[i] * vecB[i];
     normA += vecA[i] ** 2;
     normB += vecB[i] ** 2;
   }
   if (normA === 0 || normB === 0) return 0;
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-// ── 向量相似度 → 分段灰度映射（移植自小程序 vectorMatch）────
-// 比线性映射更合理：低分段更敏感、高分段更精确
-//   sim < 0.45            → 0
-//   0.45 ≤ sim < 0.65     → 20~59（线性插值）
-//   0.65 ≤ sim < 0.85     → 60~89
-//   sim ≥ 0.85            → 90~100
 function mapSimilarityToScore(sim: number): number {
   if (sim < 0.45) return 0;
   if (sim < 0.65) return Math.round(20 + ((sim - 0.45) / 0.20) * 39);
@@ -54,40 +85,30 @@ function mapSimilarityToScore(sim: number): number {
   return Math.round(Math.min(90 + ((sim - 0.85) / 0.15) * 10, 100));
 }
 
-// ── 向量化：调用 embedding-2 ──────────────────────────────────
 async function getEmbedding(text: string): Promise<number[]> {
   const res = await client.embeddings.create({
     model: "embedding-2",
-    input: text.slice(0, 3000), // embedding-2 单次上限
+    input: text.slice(0, 3000),
   });
   return res.data[0].embedding;
 }
 
-// ── 暴力 JSON 解析（三层兜底）────────────────────────────────
-// GLM-4 实测两类致命错误：
-//   1. JSON 字符串值内含裸换行 \u000A（非合法 \n 转义）
-//   2. 中文内容里的英文双引号未被转义，破坏字符串边界
+// ── 三层 JSON 兜底解析 ────────────────────────────────────────
 function robustJSONParse(raw: string): Record<string, unknown> | null {
-  // Pass-1：直接 parse
   try { return JSON.parse(raw) as Record<string, unknown>; } catch { /* continue */ }
 
-  // 截取 { ... } 范围
   const first = raw.indexOf("{");
   const last  = raw.lastIndexOf("}");
   if (first === -1 || last === -1 || last <= first) return null;
   const block = raw.slice(first, last + 1);
 
-  // Pass-2：清除控制字符（换行/回车/制表符 → 空格，其余直接删除）
   const noCtrl = block.replace(/[\u0000-\u001F]/g, (ch) =>
     ch === "\n" || ch === "\r" || ch === "\t" ? " " : "",
   );
   try { return JSON.parse(noCtrl) as Record<string, unknown>; } catch { /* continue */ }
 
-  // Pass-3：逐字符扫描，修复字符串内的裸双引号
   try {
-    let inStr = false;
-    let escaped = false;
-    let out = "";
+    let inStr = false, escaped = false, out = "";
     for (let i = 0; i < noCtrl.length; i++) {
       const ch = noCtrl[i];
       if (escaped) { out += ch; escaped = false; continue; }
@@ -110,49 +131,75 @@ function robustJSONParse(raw: string): Record<string, unknown> | null {
   } catch { return null; }
 }
 
-// ── System Prompt ──────────────────────────────────────────────
-const SYSTEM_PROMPT = `角色设定：前 BAT 级别资深技术 HR 及猎头，拥有 10 年招聘经验。
-任务：根据用户提供的目标岗位 JD，靶向重构原始简历，并使用加权评分矩阵计算关键词匹配分。
+// ── System Prompt：三级加权评估矩阵 ──────────────────────────
+const SYSTEM_PROMPT = `你是前 BAT 资深技术 HR，拥有 10 年大厂招聘经验。
+任务：分析简历与 JD 的匹配情况，输出加权评估矩阵报告与靶向润色建议。
 
-【第一步：加权评分矩阵计算 keyword_score】
-识别 JD 中每项要求的权重级别：
-  高权重(3分)：包含"必须/精通/核心/X年以上/深度"等词
-  中权重(2分)：包含"熟悉/掌握/具备/能够"等词
-  低权重(1分)：包含"了解/优先考虑/加分项/最好有"等词
-对照简历，评估每项 JD 要求的满足程度：
-  完全命中 → 该项得满分（权重分）
-  部分命中 → 该项得 50% 分
-  未命中   → 该项得 0 分
-计算公式：keyword_score = ROUND( 简历命中总分 / JD权重总分 × 100 )，结果为 0~100 整数。
+════════════════════════════════════════
+【第一步：三级加权评估矩阵】
+════════════════════════════════════════
 
-【第二步：靶向润色 polished_items】
-运用 STAR 法则重写经历，将大白话转化为带有数据支撑的专业表述，并自然植入 JD 关键词。
-严禁凭空虚构任何公司、项目名或核心技术，仅做表达方式的升维。
+按以下规则识别 JD 中每项能力要求，划分权重等级：
 
-【输出严格要求】
-- polished_items 每个对象必须含 "original_text"、"polished_text"、"reason" 三字段。
-- 所有字符串值不得含双引号字符（"），改用【】或『』。
-- 字符串值不得含字面换行符，分行用 \\n。
-- 不得含任何 Markdown 标记。
+- 核心项（category: "core"，weight: 1.0）
+  关键词：必须 / 精通 / X年以上 / 核心 / 深度 / 主导 / 负责 / 独立完成
+  含义：不满足此项通常直接拒绝，是硬性门槛
 
-!!! 只能输出合法的、可直接被 JSON.parse() 解析的 JSON 字符串，严禁 markdown 标记和解释性文字 !!!
+- 加分项（category: "bonus"，weight: 0.6）
+  关键词：熟悉 / 掌握 / 具备 / 有经验 / 能够 / 了解并实践
+  含义：有则加分，增强竞争力
+
+- 了解项（category: "awareness"，weight: 0.3）
+  关键词：了解 / 优先 / 最好有 / 加分项 / 有意愿 / 能接受学习
+  含义：锦上添花项，有更好
+
+对照简历，为每项要求评定满足度 score（0-100）：
+- 完全匹配，有明确数据支撑 → 80-100
+- 有相关经历但不完全精确 → 40-70
+- 几乎无相关经历 → 0-30
+
+【加权公式（服务端复验用）】
+total_score = ROUND( Σ(weight_i × score_i) / Σ(weight_i) )
+
+════════════════════════════════════════
+【第二步：靶向润色建议】
+════════════════════════════════════════
+
+运用 STAR 法则重写简历中与 JD 最相关的句子，植入关键词，补充量化数据。
+严禁凭空虚构任何公司名、项目名、技术细节或数字。
+每条 refine_advice 必须有清晰的修改理由。
+
+════════════════════════════════════════
+【输出严格约束】
+════════════════════════════════════════
+
+1. 只能输出合法 JSON，不得有任何 markdown 代码块、前缀或解释文字
+2. 所有字符串值不得含双引号字符（"），改用【】
+3. 字符串值不得含字面换行符，换行用 \\n 转义
+4. weight 字段必须是数字 1.0 / 0.6 / 0.3，不得是字符串
+5. score 字段必须是 0-100 的整数
+
+!!! 开头直接输出 {，不得有任何其他字符 !!!
 
 输出格式：
 {
-  "keyword_score": 75,
-  "global_advice": "100字以内的整体评价",
-  "polished_items": [
-    {
-      "original_text": "原始简历中的某句话",
-      "polished_text": "润色后的专业表述",
-      "reason": "修改原因说明"
-    }
+  "weight_matrix": [
+    {"keyword": "React", "category": "core", "weight": 1.0, "score": 85},
+    {"keyword": "TypeScript", "category": "bonus", "weight": 0.6, "score": 70},
+    {"keyword": "Docker", "category": "awareness", "weight": 0.3, "score": 0}
   ],
-  "jd_missing_gap": ["缺失技能1", "缺失技能2"]
+  "missing_skills": ["Docker", "Kubernetes"],
+  "refine_advice": [
+    {
+      "original_text": "负责前端开发",
+      "polished_text": "主导 React+TypeScript 前端模块开发，实现动态数据看板，日均 UV 提升 40%",
+      "reason": "补充技术栈细节与量化指标，符合 JD 中【核心项：React 精通】的要求"
+    }
+  ]
 }`;
 
-// ── LLM 润色（单独封装，供 Promise.all 并发调用）─────────────
-async function getLLMPolishedData(resumeText: string, jdText: string): Promise<Record<string, unknown>> {
+// ── LLM 调用 ─────────────────────────────────────────────────
+async function callLLM(resumeText: string, jdText: string): Promise<Record<string, unknown>> {
   const result = await client.chat.completions.create({
     model: "glm-4-plus",
     messages: [
@@ -162,7 +209,7 @@ async function getLLMPolishedData(resumeText: string, jdText: string): Promise<R
         content: `【简历原文】\n${resumeText.slice(0, 3000)}\n\n【目标岗位 JD】\n${jdText.slice(0, 2000)}`,
       },
     ],
-    max_tokens: 3000,
+    max_tokens: 3500,
     stream: false,
   });
 
@@ -170,7 +217,7 @@ async function getLLMPolishedData(resumeText: string, jdText: string): Promise<R
     (result as unknown as { choices: { message: { content: string } }[] })
       .choices[0]?.message?.content ?? "{}";
 
-  console.log("=== RAW LLM OUTPUT ===\n", raw, "\n=== END ===");
+  console.log("=== LLM RAW OUTPUT ===\n", raw.slice(0, 300), "\n...");
 
   const parsed = robustJSONParse(raw);
   if (!parsed) throw new Error("AI 返回 JSON 解析失败，请重试");
@@ -191,9 +238,9 @@ export async function POST(req: Request) {
         try {
           const body = await req.json() as { resumeText?: string; jdText?: string };
           resumeText = (body.resumeText ?? "").trim();
-          jdText = (body.jdText ?? "").trim();
+          jdText     = (body.jdText ?? "").trim();
         } catch {
-          controller.enqueue(line({ type: "error", message: "请求体解析失败，需要 JSON 格式" }));
+          controller.enqueue(line({ type: "error", message: "请求体解析失败" }));
           return;
         }
 
@@ -206,57 +253,53 @@ export async function POST(req: Request) {
           return;
         }
 
-        controller.enqueue(line({ type: "progress", label: "并发执行：AI 靶向润色 + 双向量余弦计算…" }));
+        controller.enqueue(line({ type: "progress", label: "AI 加权矩阵分析 + 余弦向量计算并发执行…" }));
 
-        // ── 并发：LLM 润色 + 简历向量 + JD 向量 同时发起 ──────
+        // 并发：LLM 分析 + 双向量
         const [parsed, resumeVec, jdVec] = await Promise.all([
-          getLLMPolishedData(resumeText, jdText),
-
-          // embedding 失败时 fallback null，不阻断主流程
-          getEmbedding(resumeText).catch((e) => {
-            console.warn("简历向量化失败:", e);
-            return null;
-          }),
-          getEmbedding(jdText).catch((e) => {
-            console.warn("JD 向量化失败:", e);
-            return null;
-          }),
+          callLLM(resumeText, jdText),
+          getEmbedding(resumeText).catch((e) => { console.warn("简历向量化失败:", e); return null; }),
+          getEmbedding(jdText).catch((e)     => { console.warn("JD 向量化失败:", e);   return null; }),
         ]);
 
-        // ── 双引擎打分融合 ─────────────────────────────────────
-        // 引擎 A：向量灰度分（余弦相似度 → 分段映射）
-        // 引擎 B：关键词加权分（LLM 加权矩阵计算，来自 parsed.keyword_score）
-        // 最终分 = A × 50% + B × 50%
+        // ── 提取并校验 weight_matrix ──────────────────────────
+        const rawMatrix = Array.isArray(parsed.weight_matrix)
+          ? (parsed.weight_matrix as unknown[])
+          : [];
 
-        const keywordScore =
-          typeof parsed.keyword_score === "number" &&
-          parsed.keyword_score >= 0 &&
-          parsed.keyword_score <= 100
-            ? Math.round(parsed.keyword_score)
-            : null;
+        const weightMatrix: WeightMatrixItem[] = rawMatrix
+          .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
+          .map((item) => {
+            const cat = (item.category as string) ?? "core";
+            const validCat: WeightMatrixItem["category"] =
+              cat === "bonus" ? "bonus" : cat === "awareness" ? "awareness" : "core";
+            return {
+              keyword:  typeof item.keyword === "string" ? item.keyword : "未知技能",
+              category: validCat,
+              weight:   WEIGHT_MAP[validCat] as WeightMatrixItem["weight"],
+              score:    typeof item.score === "number"
+                ? Math.max(0, Math.min(100, Math.round(item.score)))
+                : 0,
+            };
+          });
 
-        let score: number;
+        // ── 加权公式计算主分 ──────────────────────────────────
+        const weightedScore = computeWeightedScore(weightMatrix);
+
+        // ── 向量辅助分（余弦相似度映射） ──────────────────────
+        let vectorScore: number | null = null;
         if (resumeVec && jdVec) {
-          const similarity = cosineSimilarity(resumeVec, jdVec);
-          const vectorScore = mapSimilarityToScore(similarity);
-          const kw = keywordScore ?? vectorScore; // keyword 缺失时用向量分代替
-          score = Math.round(vectorScore * 0.5 + kw * 0.5);
-          console.log(
-            `余弦相似度: ${similarity.toFixed(4)} → 向量灰度分: ${vectorScore}`,
-            `关键词加权分: ${keywordScore ?? "N/A"} → 融合分: ${score}`,
-          );
-        } else if (keywordScore !== null) {
-          // 向量化失败：仅使用关键词分
-          score = keywordScore;
-          console.warn("向量化失败，使用关键词加权分:", score);
-        } else {
-          score = 50;
-          console.warn("双引擎均失败，使用 fallback 分数 50");
+          const sim = cosineSimilarity(resumeVec, jdVec);
+          vectorScore = mapSimilarityToScore(sim);
+          console.log(`余弦相似度: ${sim.toFixed(4)} → 向量分: ${vectorScore}, 加权分: ${weightedScore}`);
         }
 
-        // ── 组装结果 ───────────────────────────────────────────
-        const polishedItems: PolishedItem[] = Array.isArray(parsed.polished_items)
-          ? (parsed.polished_items as PolishedItem[]).filter(
+        // ── 最终分 = 加权矩阵分（主）+ 向量分（参考，不影响主分）
+        const totalScore = weightedScore;
+
+        // ── 靶向润色建议 ───────────────────────────────────────
+        const refineAdvice: RefineAdviceItem[] = Array.isArray(parsed.refine_advice)
+          ? (parsed.refine_advice as RefineAdviceItem[]).filter(
               (item) =>
                 item &&
                 typeof item.original_text === "string" &&
@@ -264,15 +307,23 @@ export async function POST(req: Request) {
             )
           : [];
 
+        const missingSkills: string[] = Array.isArray(parsed.missing_skills)
+          ? (parsed.missing_skills as string[]).filter((s) => typeof s === "string")
+          : [];
+
         controller.enqueue(
           line({
-            type: "result",
-            score,
-            global_advice: typeof parsed.global_advice === "string" ? parsed.global_advice : "",
-            polished_items: polishedItems,
-            jd_missing_gap: Array.isArray(parsed.jd_missing_gap)
-              ? (parsed.jd_missing_gap as string[]).filter((s) => typeof s === "string")
-              : [],
+            type:          "result",
+            total_score:   totalScore,
+            vector_score:  vectorScore,
+            weight_matrix: weightMatrix,
+            missing_skills: missingSkills,
+            refine_advice:  refineAdvice,
+            // 向后兼容字段
+            score:          totalScore,
+            global_advice:  typeof parsed.global_advice === "string" ? parsed.global_advice : "",
+            polished_items: refineAdvice,
+            jd_missing_gap: missingSkills,
           }),
         );
       } catch (err) {

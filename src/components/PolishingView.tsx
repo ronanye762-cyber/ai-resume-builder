@@ -1,6 +1,56 @@
 "use client";
 
 import { useRef, useState } from "react";
+
+// ── OCR 后处理拦截器（防弹级三步兜底，无论大模型返回什么垃圾格式都不崩溃）──
+function sanitizeOcrText(raw: string): { text: string; isValid: boolean } {
+  // 终极推土机：把 "text": 之后的所有内容暴力截出，再无差别清洗 JSON 控制符
+  function bulldozerExtract(str: string): string {
+    const m = str.match(/"text"\s*:\s*([\s\S]*)/);
+    if (!m) return '';
+    return m[1]
+      .replace(/[{}\[\]"\\]/g, '')  // 去掉 {} [] " \
+      .replace(/\\n/g, '\n')         // 保留换行语义
+      .trim();
+  }
+
+  // Step A：剥离 markdown 代码围栏
+  const stripped = raw
+    .replace(/^```[a-z]*\s*/i, '')
+    .replace(/\s*```\s*$/i, '')
+    .trim();
+
+  // 提前拦截无效图片（兜住后续解析失败时也能正确判定）
+  if (/["']?is_valid["']?\s*:\s*false/.test(stripped)) {
+    return { text: '', isValid: false };
+  }
+
+  // Step B：尝试标准 JSON.parse
+  const jsonMatch = stripped.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0]) as { is_valid?: boolean; text?: string };
+      if (parsed.is_valid === false) return { text: '', isValid: false };
+      const textVal = (parsed.text ?? '').trim();
+      if (textVal) return { text: textVal, isValid: true };
+      return { text: '', isValid: false };
+    } catch {
+      // Step C：JSON 格式畸形 → 启动终极推土机
+      console.warn('[sanitizeOcrText] JSON 解析失败，启动正则回退机制:', stripped.slice(0, 200));
+      const extracted = bulldozerExtract(stripped);
+      if (extracted.length > 5) return { text: extracted, isValid: true };
+    }
+  }
+
+  // 安全红线：结果仍含 JSON 结构特征则拦截，绝不透传给 UI
+  if (/^\s*\{/.test(stripped) || /"(is_valid|text|error_code)"/.test(stripped)) {
+    console.warn('[sanitizeOcrText] 安全红线触发，拦截 JSON 结构泄漏');
+    return { text: '', isValid: false };
+  }
+
+  const plain = stripped;
+  return { text: plain, isValid: plain.length > 5 };
+}
 import { useRouter } from "next/navigation";
 import type { PipelineMsg, ResultMsg, PolishedItem } from "@/app/api/analyze-resume/route";
 import type { TranslatedJd } from "@/app/api/translate-jd/route";
@@ -43,15 +93,20 @@ function HybridInput({
       const res = await fetch("/api/extract-text", { method: "POST", body: fd });
       const data = await res.json() as { text?: string; error?: string; error_code?: string };
       if (!res.ok || data.error) {
-        // 有效性门控：非简历/JD 图片给出更明确的提示
         if (data.error_code === "INVALID_IMAGE_CONTENT") {
-          setExtractError("请上传包含文字的简历或 JD 图片，不要上传无关图片哦 📎");
+          setExtractError("未识别到有效信息，请重新插入图片");
         } else {
           setExtractError(data.error ?? "提取失败");
         }
         return;
       }
-      onChange(data.text ?? "");
+      // 前端后处理拦截：防止原始 JSON / markdown 泄漏到输入框
+      const sanitized = sanitizeOcrText(data.text ?? "");
+      if (!sanitized.isValid) {
+        setExtractError("未识别到有效信息，请重新插入图片");
+        return;
+      }
+      onChange(sanitized.text);
       setSourceFile(file.name);
       setJustFilled(true);
       setTimeout(() => setJustFilled(false), 2500);

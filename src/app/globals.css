@@ -4,383 +4,444 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ── 赛博配色 Token（Tailwind v4 在 @theme 中直接定义颜色值） ── */
+/* ═══════════════════════════════════════════════════════════════
+   莫兰迪玻璃质感设计系统 · Morandi Glassmorphism Design Tokens
+   ═══════════════════════════════════════════════════════════════ */
 @theme {
-  --color-cyber-bg:    #0A0E17;
-  --color-neon-purple: #BF00FF;
-  --color-neon-cyan:   #00FFFF;
-  --color-cyber-card:  #12101F;
+  /* 莫兰迪三色背景基底 */
+  --color-m-sand:       #EDE8E0;   /* 温暖沙色 */
+  --color-m-mist:       #E8E4ED;   /* 薄雾紫灰 */
+  --color-m-sage-bg:    #E0EAE4;   /* 淡鼠尾草 */
+
+  /* 莫兰迪三色强调色 */
+  --color-m-sage:       #7A9E87;   /* 鼠尾草绿 */
+  --color-m-mauve:      #9B8BA0;   /* 烟灰紫玫 */
+  --color-m-slate:      #7A99AB;   /* 雾霾蓝灰 */
+  --color-m-rose:       #A89090;   /* 暖玫瑰灰 */
+
+  /* 文字层级 */
+  --color-m-ink:        #3A3832;   /* 主文字（暖炭黑） */
+  --color-m-ink-2:      #6A6560;   /* 次要文字 */
+  --color-m-ink-3:      #9A9590;   /* 弱文字 */
+  --color-m-ink-4:      #C0BBB7;   /* 极弱文字 */
+
+  /* 向后兼容：旧 cyber tokens → 映射到 Morandi */
+  --color-cyber-bg:     #EDE8E0;
+  --color-neon-purple:  #9B8BA0;
+  --color-neon-cyan:    #7A9E87;
+  --color-cyber-card:   oklch(1 0 0 / 55%);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-background:                    var(--background);
+  --color-foreground:                    var(--foreground);
+  --font-sans:                           var(--font-sans);
+  --font-mono:                           var(--font-geist-mono);
+  --font-heading:                        var(--font-sans);
+  --color-sidebar-ring:                  var(--sidebar-ring);
+  --color-sidebar-border:                var(--sidebar-border);
+  --color-sidebar-accent-foreground:     var(--sidebar-accent-foreground);
+  --color-sidebar-accent:                var(--sidebar-accent);
+  --color-sidebar-primary-foreground:    var(--sidebar-primary-foreground);
+  --color-sidebar-primary:               var(--sidebar-primary);
+  --color-sidebar-foreground:            var(--sidebar-foreground);
+  --color-sidebar:                       var(--sidebar);
+  --color-chart-5:                       var(--chart-5);
+  --color-chart-4:                       var(--chart-4);
+  --color-chart-3:                       var(--chart-3);
+  --color-chart-2:                       var(--chart-2);
+  --color-chart-1:                       var(--chart-1);
+  --color-ring:                          var(--ring);
+  --color-input:                         var(--input);
+  --color-border:                        var(--border);
+  --color-destructive:                   var(--destructive);
+  --color-accent-foreground:             var(--accent-foreground);
+  --color-accent:                        var(--accent);
+  --color-muted-foreground:              var(--muted-foreground);
+  --color-muted:                         var(--muted);
+  --color-secondary-foreground:          var(--secondary-foreground);
+  --color-secondary:                     var(--secondary);
+  --color-primary-foreground:            var(--primary-foreground);
+  --color-primary:                       var(--primary);
+  --color-popover-foreground:            var(--popover-foreground);
+  --color-popover:                       var(--popover);
+  --color-card-foreground:               var(--card-foreground);
+  --color-card:                          var(--card);
+  --radius-sm:   calc(var(--radius) * 0.6);
+  --radius-md:   calc(var(--radius) * 0.8);
+  --radius-lg:   var(--radius);
+  --radius-xl:   calc(var(--radius) * 1.4);
+  --radius-2xl:  calc(var(--radius) * 1.8);
+  --radius-3xl:  calc(var(--radius) * 2.2);
+  --radius-4xl:  calc(var(--radius) * 2.6);
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: oklch(0.985 0.004 60);
+  --foreground: oklch(0.22 0.008 60);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.22 0.008 60);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.22 0.008 60);
+  --primary: oklch(0.62 0.06 300);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.94 0.008 60);
+  --secondary-foreground: oklch(0.22 0.008 60);
+  --muted: oklch(0.94 0.008 60);
+  --muted-foreground: oklch(0.52 0.012 60);
+  --accent: oklch(0.94 0.008 60);
+  --accent-foreground: oklch(0.22 0.008 60);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --border: oklch(0.89 0.006 60);
+  --input: oklch(0.89 0.006 60);
+  --ring: oklch(0.62 0.06 300);
+  --chart-1: oklch(0.62 0.06 300);
+  --chart-2: oklch(0.62 0.06 160);
+  --chart-3: oklch(0.62 0.06 220);
+  --chart-4: oklch(0.62 0.06 30);
+  --chart-5: oklch(0.62 0.06 90);
+  --radius: 0.75rem;
+  --sidebar: oklch(0.97 0.004 60);
+  --sidebar-foreground: oklch(0.22 0.008 60);
+  --sidebar-primary: oklch(0.62 0.06 300);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-accent: oklch(0.94 0.008 60);
+  --sidebar-accent-foreground: oklch(0.22 0.008 60);
+  --sidebar-border: oklch(0.89 0.006 60);
+  --sidebar-ring: oklch(0.62 0.06 300);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
-    @apply font-sans;
+    @apply font-sans antialiased;
+  }
+  body {
+    /* 莫兰迪三色渐变固定底层背景 */
+    background: linear-gradient(135deg, #EDE8E0 0%, #E8E4ED 48%, #E0EAE4 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: #3A3832;
   }
 }
 
-/* 简历姓名更新时的淡入动画 */
-@keyframes resumeFieldFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* ═══════════════════════════════════════════════════════════════
+   核心玻璃质感工具类 · Glass Utility Classes
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 主要面板容器 */
+.glass-surface {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 4px 32px rgba(58, 56, 50, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
 }
 
-.resume-field-updated {
-  animation: resumeFieldFadeIn 0.35s ease-out;
+/* 可悬停的交互卡片 */
+.glass-card {
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 2px 18px rgba(58, 56, 50, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow:
+    0 10px 48px rgba(58, 56, 50, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  transform: translateY(-3px);
 }
 
-/* ── 霓虹发光工具类 ─────────────────────────────────────────── */
-.neon-glow-purple {
-  filter: drop-shadow(0 0 6px #BF00FF) drop-shadow(0 0 18px rgba(191, 0, 255, 0.5));
-}
-.neon-glow-cyan {
-  filter: drop-shadow(0 0 6px #00FFFF) drop-shadow(0 0 18px rgba(0, 255, 255, 0.5));
+/* 侧边面板（左/右栏） */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.60);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
 }
 
-/* ── 赛博卡片（玻璃拟态 + 边框光晕） ─────────────────────────── */
+/* 顶部导航栏 */
+.glass-header {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(22px) saturate(200%);
+  -webkit-backdrop-filter: blur(22px) saturate(200%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* 文本输入框 */
+.glass-input {
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  color: #3A3832;
+  border-radius: 0.75rem;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.glass-input:focus {
+  outline: none;
+  border-color: rgba(155, 139, 160, 0.55);
+  box-shadow: 0 0 0 3px rgba(155, 139, 160, 0.10);
+  background: rgba(255, 255, 255, 0.90);
+}
+.glass-input::placeholder {
+  color: rgba(106, 101, 96, 0.42);
+}
+
+/* 简历预览白纸 */
+.resume-paper {
+  background: rgba(255, 255, 255, 0.90);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  box-shadow:
+    0 8px 56px rgba(58, 56, 50, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
+}
+
+/* 胶囊标签 */
+.glass-pill {
+  background: rgba(255, 255, 255, 0.60);
+  border: 1px solid rgba(255, 255, 255, 0.80);
+  backdrop-filter: blur(12px);
+}
+
+/* 鼠尾草绿强调卡 */
+.glass-card-sage {
+  background: rgba(122, 158, 135, 0.08);
+  border: 1px solid rgba(122, 158, 135, 0.22);
+  backdrop-filter: blur(12px);
+  transition: all 0.25s ease;
+}
+.glass-card-sage:hover {
+  background: rgba(122, 158, 135, 0.14);
+  border-color: rgba(122, 158, 135, 0.42);
+  transform: translateY(-2px);
+}
+
+/* 烟灰紫强调卡 */
+.glass-card-mauve {
+  background: rgba(155, 139, 160, 0.08);
+  border: 1px solid rgba(155, 139, 160, 0.20);
+  backdrop-filter: blur(12px);
+  transition: all 0.25s ease;
+}
+.glass-card-mauve:hover {
+  background: rgba(155, 139, 160, 0.14);
+  border-color: rgba(155, 139, 160, 0.38);
+  transform: translateY(-2px);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   向后兼容：旧 Cyber 类名 → Morandi 玻璃质感重映射
+   ═══════════════════════════════════════════════════════════════ */
+
 .card-cyber-purple {
-  background: rgba(18, 16, 31, 0.8);
-  border: 1px solid rgba(191, 0, 255, 0.25);
-  box-shadow: 0 0 18px rgba(191, 0, 255, 0.12), inset 0 0 20px rgba(191, 0, 255, 0.04);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.25s ease;
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(155, 139, 160, 0.20);
+  box-shadow: 0 2px 18px rgba(155, 139, 160, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transition: all 0.28s ease;
 }
 .card-cyber-purple:hover {
-  border-color: rgba(191, 0, 255, 0.65);
-  box-shadow: 0 0 30px rgba(191, 0, 255, 0.35), 0 0 70px rgba(191, 0, 255, 0.15),
-              inset 0 0 24px rgba(191, 0, 255, 0.07);
-  transform: translateY(-4px);
+  border-color: rgba(155, 139, 160, 0.48);
+  box-shadow: 0 10px 40px rgba(155, 139, 160, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  transform: translateY(-3px);
 }
 
 .card-cyber-cyan {
-  background: rgba(18, 16, 31, 0.8);
-  border: 1px solid rgba(0, 255, 255, 0.2);
-  box-shadow: 0 0 18px rgba(0, 255, 255, 0.1), inset 0 0 20px rgba(0, 255, 255, 0.03);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.25s ease;
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(122, 158, 135, 0.20);
+  box-shadow: 0 2px 18px rgba(122, 158, 135, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transition: all 0.28s ease;
 }
 .card-cyber-cyan:hover {
-  border-color: rgba(0, 255, 255, 0.6);
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.3), 0 0 70px rgba(0, 255, 255, 0.12),
-              inset 0 0 24px rgba(0, 255, 255, 0.06);
-  transform: translateY(-4px);
+  border-color: rgba(122, 158, 135, 0.48);
+  box-shadow: 0 10px 40px rgba(122, 158, 135, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  transform: translateY(-3px);
 }
 
-/* ── 赛博背景网格 ─────────────────────────────────────────────── */
-.cyber-grid {
-  background-image:
-    linear-gradient(rgba(191, 0, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(191, 0, 255, 0.04) 1px, transparent 1px);
-  background-size: 44px 44px;
+.panel-cyber-purple,
+.panel-cyber-cyan {
+  background: rgba(255, 255, 255, 0.60);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border-right: 1px solid rgba(255, 255, 255, 0.78);
 }
 
-/* ── 霓虹渐变文字 ─────────────────────────────────────────────── */
+.header-cyber,
+.header-cyber-cyan {
+  background: rgba(255, 255, 255, 0.86);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+.paper-glow {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 0 0 1px rgba(155, 139, 160, 0.05),
+    0 10px 56px rgba(58, 56, 50, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
+}
+.paper-glow-cyan {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 0 0 1px rgba(122, 158, 135, 0.05),
+    0 10px 56px rgba(58, 56, 50, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
+}
+
+/* 输入框：旧 terminal 类 → 现代玻璃输入 */
+.terminal-input {
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  color: #3A3832;
+  font-family: var(--font-geist-sans), sans-serif;
+  caret-color: #9B8BA0;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.terminal-input:focus {
+  outline: none;
+  border-color: rgba(155, 139, 160, 0.55);
+  box-shadow: 0 0 0 3px rgba(155, 139, 160, 0.10);
+  background: rgba(255, 255, 255, 0.92);
+}
+.terminal-input::placeholder {
+  color: rgba(106, 101, 96, 0.40);
+}
+
+.terminal-input-cyan {
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  color: #3A3832;
+  caret-color: #7A9E87;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.terminal-input-cyan:focus {
+  outline: none;
+  border-color: rgba(122, 158, 135, 0.55);
+  box-shadow: 0 0 0 3px rgba(122, 158, 135, 0.10);
+  background: rgba(255, 255, 255, 0.92);
+}
+.terminal-input-cyan::placeholder {
+  color: rgba(106, 101, 96, 0.40);
+}
+
+/* 发光效果 → 柔和莫兰迪光晕 */
+.neon-glow-purple {
+  filter: drop-shadow(0 0 3px rgba(155, 139, 160, 0.50));
+}
+.neon-glow-cyan {
+  filter: drop-shadow(0 0 3px rgba(122, 158, 135, 0.50));
+}
+
+/* 渐变文字 → 莫兰迪三色渐变 */
 .text-neon-gradient {
-  background: linear-gradient(135deg, #BF00FF 0%, #7B2FFF 40%, #00FFFF 100%);
+  background: linear-gradient(135deg, #9B8BA0 0%, #8B92A8 42%, #7A9E87 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* ── 赛博子页面面板（暗色玻璃拟态）────────────────────────────── */
-.panel-cyber-purple {
-  background: rgba(12, 8, 24, 0.92);
-  border-right: 1px solid rgba(191, 0, 255, 0.18);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
-.panel-cyber-cyan {
-  background: rgba(8, 18, 24, 0.92);
-  border-right: 1px solid rgba(0, 255, 255, 0.15);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
-.header-cyber {
-  background: rgba(10, 14, 23, 0.98);
-  border-bottom: 1px solid rgba(191, 0, 255, 0.2);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-.header-cyber-cyan {
-  background: rgba(10, 14, 23, 0.98);
-  border-bottom: 1px solid rgba(0, 255, 255, 0.18);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+/* 背景网格 → 极淡莫兰迪纹理 */
+.cyber-grid {
+  background-image:
+    linear-gradient(rgba(155, 139, 160, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(155, 139, 160, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
 }
 
-/* ── 全息蓝图面板（暗色 + 紫色霓虹边框发光） ─────────────────── */
-.paper-glow {
-  background: rgba(19, 17, 28, 0.88);
-  border: 1px solid rgba(191, 0, 255, 0.22);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow:
-    0 0 0 1px rgba(191, 0, 255, 0.08),
-    0 0 30px rgba(191, 0, 255, 0.10),
-    inset 0 0 40px rgba(191, 0, 255, 0.03),
-    0 24px 64px rgba(0, 0, 0, 0.55);
+/* ═══════════════════════════════════════════════════════════════
+   动画系统
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes resumeFieldFadeIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-/* 青色版（润色页结果卡） */
-.paper-glow-cyan {
-  background: rgba(8, 20, 28, 0.88);
-  border: 1px solid rgba(0, 255, 255, 0.18);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow:
-    0 0 0 1px rgba(0, 255, 255, 0.06),
-    0 0 28px rgba(0, 255, 255, 0.09),
-    inset 0 0 40px rgba(0, 255, 255, 0.02),
-    0 24px 64px rgba(0, 0, 0, 0.55);
+.resume-field-updated {
+  animation: resumeFieldFadeIn 0.35s ease-out;
 }
 
-/* ── 命令行输入框 ────────────────────────────────────────────── */
-.terminal-input {
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(191, 0, 255, 0.3);
-  color: #e2e8f0;
-  font-family: var(--font-geist-mono), monospace;
-  caret-color: #00ff88;
-  transition: border-color 0.2s;
-}
-.terminal-input:focus {
-  outline: none;
-  border-color: rgba(191, 0, 255, 0.7);
-  box-shadow: 0 0 12px rgba(191, 0, 255, 0.2);
-}
-.terminal-input::placeholder {
-  color: rgba(148, 163, 184, 0.4);
-}
-.terminal-input-cyan {
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(0, 255, 255, 0.25);
-  color: #e2e8f0;
-  caret-color: #00ffff;
-  transition: border-color 0.2s;
-}
-.terminal-input-cyan:focus {
-  outline: none;
-  border-color: rgba(0, 255, 255, 0.6);
-  box-shadow: 0 0 12px rgba(0, 255, 255, 0.15);
-}
-.terminal-input-cyan::placeholder {
-  color: rgba(148, 163, 184, 0.4);
-}
-
-/* ── AhaCard 呼吸发光动画 ─────────────────────────────────── */
+/* AhaCard 呼吸光晕 → 莫兰迪柔和版 */
 @keyframes ahaBreath {
   0%, 100% {
     box-shadow:
-      0 0 0 1px rgba(191, 0, 255, 0.3),
-      0 0 16px rgba(191, 0, 255, 0.15),
-      0 0 40px rgba(191, 0, 255, 0.06),
-      inset 0 0 20px rgba(191, 0, 255, 0.04);
+      0 0 0 1px rgba(155, 139, 160, 0.16),
+      0 4px 20px rgba(155, 139, 160, 0.07);
   }
   50% {
     box-shadow:
-      0 0 0 1px rgba(191, 0, 255, 0.7),
-      0 0 28px rgba(191, 0, 255, 0.35),
-      0 0 60px rgba(191, 0, 255, 0.14),
-      inset 0 0 28px rgba(191, 0, 255, 0.08);
+      0 0 0 1px rgba(155, 139, 160, 0.38),
+      0 8px 36px rgba(155, 139, 160, 0.14);
   }
 }
 .aha-card-glow {
-  animation: ahaBreath 2.8s ease-in-out infinite;
+  animation: ahaBreath 3.2s ease-in-out infinite;
 }
 
-/* ── 章节出现动画（commit 时触发） ──────────────────────────── */
+/* 章节出现 */
 @keyframes sectionReveal {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0);   }
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 .section-reveal {
-  animation: sectionReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: sectionReveal 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* ── 打印样式（导出 PDF 用） ─────────────────────────────────── */
-@media print {
-  /* 重置背景为白色 */
-  * {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+/* 分数仪表盘弹入 */
+@keyframes scoreReveal {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.score-reveal {
+  animation: scoreReveal 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
 
+/* 权重矩阵行淡入 */
+@keyframes rowFadeIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.row-fade-in {
+  animation: rowFadeIn 0.4s ease-out both;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   打印样式
+   ═══════════════════════════════════════════════════════════════ */
+@media print {
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   html, body {
     background: #ffffff !important;
-    color: #1a1a2e !important;
+    color: #1a1a1a !important;
     font-family: "Arial", sans-serif;
-    font-size: 12pt;
-    margin: 0;
-    padding: 0;
   }
-
-  /* 隐藏左侧输入面板、标题栏、按钮、背景装饰 */
-  .print\:hidden,
-  [class*="panel-cyber"],
-  [class*="header-cyber"],
-  [class*="cyber-grid"] {
-    display: none !important;
-  }
-
-  /* 右侧结果区铺满整个页面 */
-  .print\:block { display: block !important; }
+  .print\:hidden { display: none !important; }
+  .print\:block  { display: block !important; }
   .print\:h-auto { height: auto !important; }
   .print\:overflow-visible { overflow: visible !important; }
-  .print\:p-8 { padding: 2rem !important; }
-
-  /* 结果卡片：白底黑字 */
+  .print\:p-8    { padding: 2rem !important; }
   .paper-glow-cyan {
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
     box-shadow: none !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    color: #1a1a2e !important;
-    max-width: 100% !important;
   }
-
-  /* 文字颜色统一为深色 */
-  .text-cyan-100,
-  .text-cyan-100\/90,
-  .text-amber-100,
-  .text-red-100,
-  .text-white\/30,
-  .text-white\/40,
-  [class*="text-white"] {
-    color: #374151 !important;
-  }
-
-  /* 仪表盘在打印时简化 */
-  svg text { fill: #1a1a2e !important; }
-
-  /* 列表项目 */
-  ul li, pre { color: #374151 !important; }
-
-  /* 分页控制 */
-  #polished-resume-text { page-break-before: always; }
 }

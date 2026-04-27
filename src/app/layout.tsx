@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI 简历体检 | 应届生求职助手",
-  description: "AI 驱动的应届生求职简历辅助平台",
+  title: "AI 简历匹配与精修引擎",
+  description: "三级加权矩阵 · 行级 Diff 润色 · AI 对话挖掘经历 · 专为求职者设计",
 };
 
 export default function RootLayout({
@@ -24,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="zh-CN"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
