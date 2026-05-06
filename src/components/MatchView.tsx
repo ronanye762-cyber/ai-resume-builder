@@ -173,30 +173,37 @@ function WeightMatrixPanel({ matrix }: { matrix: WeightMatrixItem[] }) {
               {group.items.map((item, idx) => (
                 <div
                   key={`${item.keyword}-${idx}`}
-                  className="row-fade-in flex items-center gap-3"
+                  className="row-fade-in flex flex-col gap-0.5"
                   style={{ animationDelay: `${idx * 60}ms` }}
                 >
-                  <span className="w-28 shrink-0 truncate text-xs font-medium text-m-ink" title={item.keyword}>
-                    {item.keyword}
-                  </span>
-                  {/* 进度条 */}
-                  <div className="flex-1 h-1.5 rounded-full bg-black/6 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-700 ${
-                        item.score >= 70 ? "bg-m-sage" :
-                        item.score >= 40 ? "bg-m-mauve" :
-                        "bg-m-rose/70"
-                      }`}
-                      style={{ width: `${item.score}%` }}
-                    />
+                  <div className="flex items-center gap-3">
+                    <span className="w-28 shrink-0 truncate text-xs font-medium text-m-ink" title={item.keyword}>
+                      {item.keyword}
+                    </span>
+                    {/* 进度条 */}
+                    <div className="flex-1 h-1.5 rounded-full bg-black/6 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-700 ${
+                          item.score >= 70 ? "bg-m-sage" :
+                          item.score >= 40 ? "bg-m-mauve" :
+                          "bg-m-rose/70"
+                        }`}
+                        style={{ width: `${item.score}%` }}
+                      />
+                    </div>
+                    <span className={`w-9 text-right text-[11px] font-mono font-semibold shrink-0 ${
+                      item.score >= 70 ? "text-m-sage" :
+                      item.score >= 40 ? "text-m-mauve" :
+                      "text-m-rose"
+                    }`}>
+                      {item.score}
+                    </span>
                   </div>
-                  <span className={`w-9 text-right text-[11px] font-mono font-semibold shrink-0 ${
-                    item.score >= 70 ? "text-m-sage" :
-                    item.score >= 40 ? "text-m-mauve" :
-                    "text-m-rose"
-                  }`}>
-                    {item.score}
-                  </span>
+                  {item.matched_segment && (
+                    <p className="pl-[7.5rem] text-[9px] leading-relaxed text-m-ink-4 truncate" title={item.matched_segment}>
+                      ↳ {item.matched_segment}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>

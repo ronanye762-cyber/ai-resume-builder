@@ -12,7 +12,10 @@ export type WeightMatrixItem = {
   keyword: string;
   category: "core" | "bonus" | "awareness";
   weight: 1.0 | 0.6 | 0.3;
-  score: number; // 0-100：简历对该项的满足度
+  score: number;           // 0-100：融合后最终得分
+  llm_score?: number;      // LLM 原始打分
+  segment_sim?: number;    // 最佳段落余弦相似度（0-1）
+  matched_segment?: string; // 最匹配的简历段落片段
 };
 
 /** 靶向润色建议单条 */
@@ -95,9 +98,31 @@ function mapSimilarityToScore(sim: number): number {
 async function getEmbedding(text: string): Promise<number[]> {
   const res = await client.embeddings.create({
     model: "embedding-2",
-    input: text.slice(0, 3000),
+    input: text.slice(0, 512),
   });
   return res.data[0].embedding;
+}
+
+// ── 简历分段（按空行切割，过滤过短片段）────────────────────────
+function splitResumeSegments(text: string): string[] {
+  return text
+    .split(/\n{2,}/)
+    .map(s => s.trim())
+    .filter(s => s.length > 30)
+    .slice(0, 8); // 最多 8 段，控制 API 调用量
+}
+
+// ── 在段落池中找最佳匹配 ──────────────────────────────────────
+function bestSegmentMatch(
+  queryVec: number[],
+  pool: Array<{ vec: number[]; text: string }>,
+): { sim: number; text: string } {
+  let best = { sim: 0, text: "" };
+  for (const seg of pool) {
+    const sim = cosineSimilarity(queryVec, seg.vec);
+    if (sim > best.sim) best = { sim, text: seg.text };
+  }
+  return best;
 }
 
 // ── 三层 JSON 兜底解析 ────────────────────────────────────────
@@ -260,14 +285,20 @@ export async function POST(req: Request) {
           return;
         }
 
-        controller.enqueue(line({ type: "progress", label: "AI 加权矩阵分析 + 余弦向量计算并发执行…" }));
+        controller.enqueue(line({ type: "progress", label: "AI 加权矩阵分析 + 简历分段向量化并发执行…" }));
 
-        // 并发：LLM 分析 + 双向量
-        const [parsed, resumeVec, jdVec] = await Promise.all([
+        // ── Phase 1：LLM + JD向量 + 简历各段向量 全并发 ────────
+        const segments = splitResumeSegments(resumeText);
+        const [parsed, jdVec, ...rawSegVecs] = await Promise.all([
           callLLM(resumeText, jdText),
-          getEmbedding(resumeText).catch((e) => { console.warn("简历向量化失败:", e); return null; }),
-          getEmbedding(jdText).catch((e)     => { console.warn("JD 向量化失败:", e);   return null; }),
+          getEmbedding(jdText).catch((e) => { console.warn("JD 向量化失败:", e); return null; }),
+          ...segments.map(s => getEmbedding(s).catch(() => null)),
         ]);
+
+        // 构建段落池（过滤向量化失败的段落）
+        const segmentPool = segments
+          .map((text, i) => rawSegVecs[i] ? { vec: rawSegVecs[i] as number[], text } : null)
+          .filter(Boolean) as { vec: number[]; text: string }[];
 
         // ── 提取并校验 weight_matrix ──────────────────────────
         const rawMatrix = Array.isArray(parsed.weight_matrix)
@@ -290,18 +321,42 @@ export async function POST(req: Request) {
             };
           });
 
-        // ── 加权公式计算主分 ──────────────────────────────────
-        const weightedScore = computeWeightedScore(weightMatrix);
+        // ── Phase 2：为每个关键词向量化，找最匹配段落 ──────────
+        controller.enqueue(line({ type: "progress", label: "分段语义匹配融合评分中…" }));
 
-        // ── 向量辅助分（余弦相似度映射） ──────────────────────
+        const kwVecs = await Promise.all(
+          weightMatrix.slice(0, 10).map(item =>
+            getEmbedding(item.keyword).catch(() => null)
+          )
+        );
+
+        // 融合：65% LLM 打分 + 35% 分段向量匹配分
+        const enhancedMatrix: WeightMatrixItem[] = weightMatrix.map((item, i) => {
+          const kwVec = kwVecs[i] ?? null;
+          if (!kwVec || segmentPool.length === 0) return item;
+          const { sim, text } = bestSegmentMatch(kwVec, segmentPool);
+          const segScore  = mapSimilarityToScore(sim);
+          const fusedScore = Math.round(0.65 * item.score + 0.35 * segScore);
+          return {
+            ...item,
+            llm_score:       item.score,
+            score:           Math.max(0, Math.min(100, fusedScore)),
+            segment_sim:     parseFloat(sim.toFixed(3)),
+            matched_segment: text.slice(0, 80),
+          };
+        });
+
+        // ── 加权公式计算主分（用融合后矩阵）────────────────────
+        const weightedScore = computeWeightedScore(enhancedMatrix);
+
+        // ── 整体向量辅助分：JD向量 vs 最佳段落 ────────────────
         let vectorScore: number | null = null;
-        if (resumeVec && jdVec) {
-          const sim = cosineSimilarity(resumeVec, jdVec);
+        if (jdVec && segmentPool.length > 0) {
+          const { sim } = bestSegmentMatch(jdVec, segmentPool);
           vectorScore = mapSimilarityToScore(sim);
-          console.log(`余弦相似度: ${sim.toFixed(4)} → 向量分: ${vectorScore}, 加权分: ${weightedScore}`);
+          console.log(`JD vs 最佳段落相似度: ${sim.toFixed(4)} → 向量分: ${vectorScore}, 融合加权分: ${weightedScore}`);
         }
 
-        // ── 最终分 = 加权矩阵分（主）+ 向量分（参考，不影响主分）
         const totalScore = weightedScore;
 
         // ── 靶向润色建议 ───────────────────────────────────────
@@ -323,7 +378,7 @@ export async function POST(req: Request) {
             type:          "result",
             total_score:   totalScore,
             vector_score:  vectorScore,
-            weight_matrix: weightMatrix,
+            weight_matrix: enhancedMatrix,
             missing_skills: missingSkills,
             refine_advice:  refineAdvice,
             // 向后兼容字段
