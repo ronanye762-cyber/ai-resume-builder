@@ -1,25 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { track } from "@vercel/analytics";
 
-export default function LoginPage() {
-  const router = useRouter();
+// useSearchParams 必须在 Suspense 边界内，单独抽出
+function CallbackErrorReader({ onError }: { onError: (msg: string) => void }) {
   const searchParams = useSearchParams();
-  const [tab, setTab]         = useState<"login" | "signup">("login");
-  const [email, setEmail]     = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
-  const [notice, setNotice]   = useState<string | null>(null);
-
-  // 读取 auth/callback 传回的错误（如确认链接过期）
   useEffect(() => {
     const cbError = searchParams.get("error");
-    if (cbError) setError(decodeURIComponent(cbError));
-  }, [searchParams]);
+    if (cbError) onError(decodeURIComponent(cbError));
+  }, [searchParams, onError]);
+  return null;
+}
+
+function LoginForm() {
+  const router = useRouter();
+  const [tab, setTab]           = useState<"login" | "signup">("login");
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState<string | null>(null);
+  const [notice, setNotice]     = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +64,10 @@ export default function LoginPage() {
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
+
+      <Suspense>
+        <CallbackErrorReader onError={setError} />
+      </Suspense>
 
       {/* 背景光晕 */}
       <div className="pointer-events-none absolute inset-0">
@@ -170,8 +177,15 @@ export default function LoginPage() {
           </form>
         </div>
 
-
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
