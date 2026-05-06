@@ -51,6 +51,28 @@ export async function saveGeneratedResume(
   }
 }
 
+/**
+ * 行为事件入库（与 Vercel Analytics track() 并行，数据留在自己库）
+ * 静默执行，失败不影响 UI
+ */
+export async function trackEvent(
+  eventName: string,
+  properties: Record<string, string | number> = {},
+): Promise<void> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from('events').insert({
+      user_id:    user.id,
+      event_name: eventName,
+      properties,
+    });
+  } catch {
+    // 静默失败
+  }
+}
+
 const PAGE_SIZE = 20;
 
 export async function fetchMoreAssessments(offset: number) {

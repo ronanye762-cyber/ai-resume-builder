@@ -10,7 +10,7 @@ import useResumeStore, {
   type InterviewPhase,
   PHASE_TO_STEP,
 } from "@/store/useResumeStore";
-import { saveGeneratedResume } from "@/app/actions/db";
+import { saveGeneratedResume, trackEvent } from "@/app/actions/db";
 
 // ── Word 导出 ─────────────────────────────────────────────────
 async function exportChatWord(data: ResumeData) {
@@ -454,17 +454,23 @@ export default function ChatView() {
   // 进入埋点；组件卸载时若未完成则记录流失阶段
   useEffect(() => {
     track("chat_enter");
+    trackEvent("chat_enter").catch(() => {});
     return () => {
       const phase = useResumeStore.getState().currentPhase;
       if (phase !== "DONE") {
         track("chat_abandoned", { phase });
+        trackEvent("chat_abandoned", { phase }).catch(() => {});
       }
     };
   }, []);
 
   const handleExportWord = async () => {
     setWordExporting(true);
-    try { await exportChatWord(resumeData); track("resume_exported", { format: "word" }); }
+    try {
+      await exportChatWord(resumeData);
+      track("resume_exported", { format: "word" });
+      trackEvent("resume_exported", { format: "word" }).catch(() => {});
+    }
     finally { setWordExporting(false); }
   };
 
@@ -476,7 +482,10 @@ export default function ChatView() {
     setMessages((prev) => [...prev, { id: userMsgId, role: "user", content: text }]);
     setInput("");
 
-    if (apiHistory.length === 0) track("chat_first_message");
+    if (apiHistory.length === 0) {
+      track("chat_first_message");
+      trackEvent("chat_first_message").catch(() => {});
+    }
     const nextHistory: ApiMessage[] = [...apiHistory, { role: "user", content: text }];
     const aiMsgId = makeId();
     setMessages((prev) => [...prev, { id: aiMsgId, role: "ai", content: "" }]);
@@ -520,6 +529,7 @@ export default function ChatView() {
       const commitPhase = extractCommitPhase(fullText);
       if (commitPhase) {
         track("chat_phase_completed", { phase: commitPhase });
+        trackEvent("chat_phase_completed", { phase: commitPhase }).catch(() => {});
         advancePhase();
         setMessages((prev) => [
           ...prev,
@@ -538,6 +548,7 @@ export default function ChatView() {
 
       if (RESUME_READY_RE.test(fullText)) {
         track("resume_ready");
+        trackEvent("resume_ready").catch(() => {});
         setMessages((prev) => [
           ...prev,
           { id: makeId(), role: "ai", content: "__RESUME_READY__" },
@@ -681,7 +692,7 @@ export default function ChatView() {
               {resumeData.basics.name !== "待填" && (
                 <>
                   <button
-                    onClick={() => { window.print(); track("resume_exported", { format: "pdf" }); }}
+                    onClick={() => { window.print(); track("resume_exported", { format: "pdf" }); trackEvent("resume_exported", { format: "pdf" }).catch(() => {}); }}
                     className="flex items-center gap-1.5 rounded-lg border border-black/10 bg-white/60 px-2.5 py-1.5 text-[10px] font-medium text-m-ink-2 hover:border-m-mauve/30 hover:text-m-mauve transition-colors"
                   >
                     导出 PDF

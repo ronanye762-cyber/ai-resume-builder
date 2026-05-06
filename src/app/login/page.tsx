@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { track } from "@vercel/analytics";
+import { trackEvent } from "@/app/actions/db";
 
 // useSearchParams 必须在 Suspense 边界内，单独抽出
 function CallbackErrorReader({ onError }: { onError: (msg: string) => void }) {
@@ -38,6 +39,7 @@ function LoginForm() {
           : error.message);
       } else {
         track("login_success");
+        trackEvent("login_success").catch(() => {});
         router.push("/");
         router.refresh();
       }
@@ -53,6 +55,7 @@ function LoginForm() {
           : error.message);
       } else {
         track("signup_success");
+        trackEvent("signup_success").catch(() => {});
         setNotice("注册成功！请前往邮箱点击确认链接后即可登录。");
         setEmail("");
         setPassword("");

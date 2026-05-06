@@ -12,7 +12,7 @@ import type {
 } from "@/app/api/analyze-resume/route";
 import type { TranslatedJd } from "@/app/api/translate-jd/route";
 import type { SelfIntroData } from "@/app/api/self-intro/route";
-import { saveAssessment } from "@/app/actions/db";
+import { saveAssessment, trackEvent } from "@/app/actions/db";
 
 // ── OCR 后处理拦截器 ──────────────────────────────────────────
 // 防弹级三步兜底，无论大模型返回什么垃圾格式都不崩溃
@@ -215,6 +215,7 @@ function DiffCard({ item, index }: { item: RefineAdviceItem; index: number }) {
   const handleCopy = async () => {
     await navigator.clipboard.writeText(item.polished_text);
     track("polish_copied", { index });
+    trackEvent("polish_copied", { index }).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -628,7 +629,7 @@ export default function MatchView() {
   const [errorMsg,      setErrorMsg]      = useState("");
   const [result,        setResult]        = useState<ResultMsg | null>(null);
 
-  useEffect(() => { track("match_enter"); }, []);
+  useEffect(() => { track("match_enter"); trackEvent("match_enter").catch(() => {}); }, []);
 
   const handleAnalyze = async () => {
     setStatus("loading"); setProgressLabel("准备中…");
@@ -659,6 +660,7 @@ export default function MatchView() {
             else if (msg.type === "result") {
                 setResult(msg); setStatus("done");
                 track("match_analyzed", { score: msg.total_score });
+                trackEvent("match_analyzed", { score: msg.total_score }).catch(() => {});
                 saveAssessment(jdText, msg).catch(() => {});
               }
             else if (msg.type === "error")  { setErrorMsg(msg.message); setStatus("error"); }
@@ -689,7 +691,7 @@ export default function MatchView() {
       });
       const json = await res.json() as { data?: TranslatedJd; error?: string };
       if (!res.ok || json.error) { setTranslateError(json.error ?? "翻译失败"); return; }
-      if (json.data) { setTranslatedJdData(json.data); track("jd_translated"); }
+      if (json.data) { setTranslatedJdData(json.data); track("jd_translated"); trackEvent("jd_translated").catch(() => {}); }
     } catch { setTranslateError("网络错误，请重试"); }
     finally   { setIsTranslatingJd(false); }
   };
@@ -705,7 +707,7 @@ export default function MatchView() {
       });
       const json = await res.json() as { data?: SelfIntroData; error?: string };
       if (!res.ok || json.error) { setIntroError(json.error ?? "生成失败"); return; }
-      if (json.data) { setIntroData(json.data); track("self_intro_generated"); }
+      if (json.data) { setIntroData(json.data); track("self_intro_generated"); trackEvent("self_intro_generated").catch(() => {}); }
     } catch { setIntroError("网络错误，请重试"); }
     finally   { setIsGeneratingIntro(false); }
   };
@@ -713,7 +715,11 @@ export default function MatchView() {
   const handleExportWord = async () => {
     if (!result) return;
     setWordExporting(true);
-    try { await exportWord(result.refine_advice); track("match_exported", { format: "word" }); }
+    try {
+      await exportWord(result.refine_advice);
+      track("match_exported", { format: "word" });
+      trackEvent("match_exported", { format: "word" }).catch(() => {});
+    }
     finally { setWordExporting(false); }
   };
 
@@ -849,7 +855,7 @@ export default function MatchView() {
           {result && (
             <div className="flex items-center gap-2">
               <button
-                onClick={() => { window.print(); track("match_exported", { format: "pdf" }); }}
+                onClick={() => { window.print(); track("match_exported", { format: "pdf" }); trackEvent("match_exported", { format: "pdf" }).catch(() => {}); }}
                 className="flex items-center gap-1.5 rounded-lg border border-black/10 bg-white/60 px-2.5 py-1.5 text-[10px] font-medium text-m-ink-2 hover:border-m-sage/30 hover:text-m-sage transition-colors"
               >
                 导出 PDF
