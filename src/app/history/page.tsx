@@ -12,18 +12,18 @@ export default async function HistoryPage() {
     redirect('/login');
   }
 
-  // 并发拉取两张表，各取最近 30 条
+  // 并发拉取两张表，各取首页 20 条
   const [{ data: assessments }, { data: generatedResumes }] = await Promise.all([
     supabase
       .from('assessments')
       .select('id, job_description, evaluation_result, created_at')
       .order('created_at', { ascending: false })
-      .limit(30),
+      .limit(20),
     supabase
       .from('generated_resumes')
       .select('id, final_content, created_at')
       .order('created_at', { ascending: false })
-      .limit(30),
+      .limit(20),
   ]);
 
   return (

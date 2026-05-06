@@ -1,5 +1,5 @@
-import PolishingView from "@/components/PolishingView";
+import { redirect } from "next/navigation";
 
 export default function PolishingPage() {
-  return <PolishingView />;
+  redirect("/match");
 }

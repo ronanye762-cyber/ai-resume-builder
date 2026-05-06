@@ -29,7 +29,17 @@ export async function proxy(request: NextRequest) {
   );
 
   // 刷新 session（勿删此行）
-  await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { pathname } = request.nextUrl;
+  const isPublic = pathname.startsWith('/login') || pathname.startsWith('/auth/');
+
+  if (!user && !isPublic) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = '/login';
+    loginUrl.search = '';
+    return NextResponse.redirect(loginUrl);
+  }
 
   return supabaseResponse;
 }

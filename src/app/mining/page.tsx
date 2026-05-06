@@ -1,5 +1,5 @@
-import MiningView from "@/components/MiningView";
+import { redirect } from "next/navigation";
 
 export default function MiningPage() {
-  return <MiningView />;
+  redirect("/chat");
 }

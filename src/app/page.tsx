@@ -141,32 +141,22 @@ export default async function HomePage() {
         ))}
       </div>
 
-      {/* 登录态入口区 */}
-      <div className="relative mt-10 flex items-center gap-3">
-        {user ? (
-          <>
-            <Link
-              href="/history"
-              className="flex items-center gap-2 rounded-full glass-pill px-5 py-2 text-xs font-medium text-m-ink-2 hover:text-m-mauve transition-colors"
-            >
-              <span className="text-m-mauve">◈</span>
-              我的评估记录
-              <span className="text-m-ink-4">→</span>
-            </Link>
-            <span className="text-[11px] text-m-ink-4 font-mono truncate max-w-[140px]">
-              {user.email}
-            </span>
-          </>
-        ) : (
+      {/* 已登录快捷入口 */}
+      {user && (
+        <div className="relative mt-10 flex items-center gap-3">
           <Link
-            href="/login"
+            href="/history"
             className="flex items-center gap-2 rounded-full glass-pill px-5 py-2 text-xs font-medium text-m-ink-2 hover:text-m-mauve transition-colors"
           >
-            <span className="text-m-mauve">→</span>
-            登录 · 保存记录
+            <span className="text-m-mauve">◈</span>
+            我的评估记录
+            <span className="text-m-ink-4">→</span>
           </Link>
-        )}
-      </div>
+          <span className="text-[11px] text-m-ink-4 font-mono truncate max-w-[140px]">
+            {user.email}
+          </span>
+        </div>
+      )}
     </main>
   );
 }

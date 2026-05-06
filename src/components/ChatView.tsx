@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
+import { track } from "@vercel/analytics";
 import useResumeStore, {
   type ResumeData,
   type AiResumePayload,
@@ -441,6 +442,8 @@ export default function ChatView() {
   const [ahaAdopted,   setAhaAdopted]   = useState<Set<string>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const abortRef = useRef<AbortController | null>(null);
+
   const { resumeData, currentPhase, updateBasics, updateResume, advancePhase, appendExperience } =
     useResumeStore();
 
@@ -448,9 +451,21 @@ export default function ChatView() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // 进入埋点；组件卸载时若未完成则记录流失阶段
+  useEffect(() => {
+    track("chat_enter");
+    return () => {
+      const phase = useResumeStore.getState().currentPhase;
+      if (phase !== "DONE") {
+        track("chat_abandoned", { phase });
+      }
+    };
+  }, []);
+
   const handleExportWord = async () => {
     setWordExporting(true);
-    try { await exportChatWord(resumeData); } finally { setWordExporting(false); }
+    try { await exportChatWord(resumeData); track("resume_exported", { format: "word" }); }
+    finally { setWordExporting(false); }
   };
 
   const handleSend = async () => {
@@ -461,17 +476,24 @@ export default function ChatView() {
     setMessages((prev) => [...prev, { id: userMsgId, role: "user", content: text }]);
     setInput("");
 
+    if (apiHistory.length === 0) track("chat_first_message");
     const nextHistory: ApiMessage[] = [...apiHistory, { role: "user", content: text }];
     const aiMsgId = makeId();
     setMessages((prev) => [...prev, { id: aiMsgId, role: "ai", content: "" }]);
     setIsLoading(true);
 
     try {
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const timeoutId = setTimeout(() => controller.abort(), 55_000);
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: nextHistory, currentPhase }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
 
       const reader  = res.body.getReader();
@@ -497,6 +519,7 @@ export default function ChatView() {
 
       const commitPhase = extractCommitPhase(fullText);
       if (commitPhase) {
+        track("chat_phase_completed", { phase: commitPhase });
         advancePhase();
         setMessages((prev) => [
           ...prev,
@@ -514,6 +537,7 @@ export default function ChatView() {
       }
 
       if (RESUME_READY_RE.test(fullText)) {
+        track("resume_ready");
         setMessages((prev) => [
           ...prev,
           { id: makeId(), role: "ai", content: "__RESUME_READY__" },
@@ -525,11 +549,18 @@ export default function ChatView() {
 
       setApiHistory([...nextHistory, { role: "assistant", content: fullText }]);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "未知错误";
-      setMessages((prev) =>
-        prev.map((m) => m.id === aiMsgId ? { ...m, content: `请求出错：${msg}` } : m),
-      );
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setMessages((prev) =>
+          prev.map((m) => m.id === aiMsgId ? { ...m, content: "请求超时，请重试" } : m),
+        );
+      } else {
+        const msg = err instanceof Error ? err.message : "未知错误";
+        setMessages((prev) =>
+          prev.map((m) => m.id === aiMsgId ? { ...m, content: `请求出错：${msg}` } : m),
+        );
+      }
     } finally {
+      abortRef.current = null;
       setIsLoading(false);
     }
   };
@@ -650,7 +681,7 @@ export default function ChatView() {
               {resumeData.basics.name !== "待填" && (
                 <>
                   <button
-                    onClick={() => window.print()}
+                    onClick={() => { window.print(); track("resume_exported", { format: "pdf" }); }}
                     className="flex items-center gap-1.5 rounded-lg border border-black/10 bg-white/60 px-2.5 py-1.5 text-[10px] font-medium text-m-ink-2 hover:border-m-mauve/30 hover:text-m-mauve transition-colors"
                   >
                     导出 PDF

@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ResultMsg } from "@/app/api/analyze-resume/route";
 import { supabase } from "@/lib/supabase";
+import { fetchMoreAssessments, fetchMoreResumes } from "@/app/actions/db";
+
+const PAGE_SIZE = 20;
 
 // ── 行类型 ────────────────────────────────────────────────────
 interface AssessmentRow {
@@ -210,8 +213,8 @@ function EmptyState({ label }: { label: string }) {
 
 // ── 主组件 ────────────────────────────────────────────────────
 export default function HistoryView({
-  assessments,
-  generatedResumes,
+  assessments: initialAssessments,
+  generatedResumes: initialResumes,
   userEmail,
 }: {
   assessments: AssessmentRow[];
@@ -221,6 +224,27 @@ export default function HistoryView({
   const router = useRouter();
   const [tab, setTab] = useState<"assessments" | "resumes">("assessments");
   const [loggingOut, setLoggingOut] = useState(false);
+  const [assessments, setAssessments] = useState(initialAssessments);
+  const [resumes, setResumes] = useState(initialResumes);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreA, setHasMoreA] = useState(initialAssessments.length === PAGE_SIZE);
+  const [hasMoreR, setHasMoreR] = useState(initialResumes.length === PAGE_SIZE);
+
+  const loadMoreAssessments = async () => {
+    setLoadingMore(true);
+    const more = await fetchMoreAssessments(assessments.length) as AssessmentRow[];
+    setAssessments((prev) => [...prev, ...more]);
+    if (more.length < PAGE_SIZE) setHasMoreA(false);
+    setLoadingMore(false);
+  };
+
+  const loadMoreResumes = async () => {
+    setLoadingMore(true);
+    const more = await fetchMoreResumes(resumes.length) as GeneratedResumeRow[];
+    setResumes((prev) => [...prev, ...more]);
+    if (more.length < PAGE_SIZE) setHasMoreR(false);
+    setLoadingMore(false);
+  };
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -270,7 +294,7 @@ export default function HistoryView({
         <div className="mb-6 flex gap-1 rounded-2xl border border-black/6 bg-white/55 backdrop-blur-sm p-1">
           {([
             { key: "assessments", label: "简历诊断记录", count: assessments.length },
-            { key: "resumes",     label: "AI 生成简历",  count: generatedResumes.length },
+            { key: "resumes",     label: "AI 生成简历",  count: resumes.length },
           ] as const).map((t) => (
             <button
               key={t.key}
@@ -296,12 +320,34 @@ export default function HistoryView({
           {tab === "assessments" && (
             assessments.length === 0
               ? <EmptyState label="暂无诊断记录，去 /match 页面做第一次分析吧" />
-              : assessments.map((row) => <AssessmentCard key={row.id} row={row} />)
+              : <>
+                  {assessments.map((row) => <AssessmentCard key={row.id} row={row} />)}
+                  {hasMoreA && (
+                    <button
+                      onClick={loadMoreAssessments}
+                      disabled={loadingMore}
+                      className="mt-2 w-full rounded-xl border border-black/8 bg-white/60 py-2.5 text-[12px] font-medium text-m-ink-3 hover:border-m-mauve/30 hover:text-m-mauve transition-colors disabled:opacity-40"
+                    >
+                      {loadingMore ? "加载中…" : "加载更多"}
+                    </button>
+                  )}
+                </>
           )}
           {tab === "resumes" && (
-            generatedResumes.length === 0
+            resumes.length === 0
               ? <EmptyState label="暂无生成记录，去 /chat 页面开始第一次对话挖掘吧" />
-              : generatedResumes.map((row) => <ResumeCard key={row.id} row={row} />)
+              : <>
+                  {resumes.map((row) => <ResumeCard key={row.id} row={row} />)}
+                  {hasMoreR && (
+                    <button
+                      onClick={loadMoreResumes}
+                      disabled={loadingMore}
+                      className="mt-2 w-full rounded-xl border border-black/8 bg-white/60 py-2.5 text-[12px] font-medium text-m-ink-3 hover:border-m-mauve/30 hover:text-m-mauve transition-colors disabled:opacity-40"
+                    >
+                      {loadingMore ? "加载中…" : "加载更多"}
+                    </button>
+                  )}
+                </>
           )}
         </div>
 

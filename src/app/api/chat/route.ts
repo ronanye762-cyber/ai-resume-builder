@@ -1,6 +1,8 @@
 import { ZhipuAI, type ChatCompletionMessageParams } from "zhipuai";
 import type { InterviewPhase } from "@/store/useResumeStore";
 
+export const maxDuration = 60;
+
 let _c: ZhipuAI | null = null;
 function getClient() { if (!_c) _c = new ZhipuAI({ apiKey: process.env.ZHIPU_API_KEY ?? '' }); return _c; }
 const client = new Proxy({} as ZhipuAI, { get(_t, p) { return getClient()[p as keyof ZhipuAI]; } });

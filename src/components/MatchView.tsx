@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { track } from "@vercel/analytics";
 import ReactMarkdown from "react-markdown";
 import type {
   PipelineMsg,
@@ -213,6 +214,7 @@ function DiffCard({ item, index }: { item: RefineAdviceItem; index: number }) {
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(item.polished_text);
+    track("polish_copied", { index });
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -626,6 +628,8 @@ export default function MatchView() {
   const [errorMsg,      setErrorMsg]      = useState("");
   const [result,        setResult]        = useState<ResultMsg | null>(null);
 
+  useEffect(() => { track("match_enter"); }, []);
+
   const handleAnalyze = async () => {
     setStatus("loading"); setProgressLabel("准备中…");
     setResult(null); setErrorMsg("");
@@ -654,7 +658,7 @@ export default function MatchView() {
             if (msg.type === "progress") setProgressLabel(msg.label);
             else if (msg.type === "result") {
                 setResult(msg); setStatus("done");
-                // 静默入库，不阻塞 UI
+                track("match_analyzed", { score: msg.total_score });
                 saveAssessment(jdText, msg).catch(() => {});
               }
             else if (msg.type === "error")  { setErrorMsg(msg.message); setStatus("error"); }
@@ -685,7 +689,7 @@ export default function MatchView() {
       });
       const json = await res.json() as { data?: TranslatedJd; error?: string };
       if (!res.ok || json.error) { setTranslateError(json.error ?? "翻译失败"); return; }
-      if (json.data) setTranslatedJdData(json.data);
+      if (json.data) { setTranslatedJdData(json.data); track("jd_translated"); }
     } catch { setTranslateError("网络错误，请重试"); }
     finally   { setIsTranslatingJd(false); }
   };
@@ -701,7 +705,7 @@ export default function MatchView() {
       });
       const json = await res.json() as { data?: SelfIntroData; error?: string };
       if (!res.ok || json.error) { setIntroError(json.error ?? "生成失败"); return; }
-      if (json.data) setIntroData(json.data);
+      if (json.data) { setIntroData(json.data); track("self_intro_generated"); }
     } catch { setIntroError("网络错误，请重试"); }
     finally   { setIsGeneratingIntro(false); }
   };
@@ -709,7 +713,8 @@ export default function MatchView() {
   const handleExportWord = async () => {
     if (!result) return;
     setWordExporting(true);
-    try { await exportWord(result.refine_advice); } finally { setWordExporting(false); }
+    try { await exportWord(result.refine_advice); track("match_exported", { format: "word" }); }
+    finally { setWordExporting(false); }
   };
 
   const anyExtracting = resumeExtracting || jdExtracting;
@@ -844,7 +849,7 @@ export default function MatchView() {
           {result && (
             <div className="flex items-center gap-2">
               <button
-                onClick={() => window.print()}
+                onClick={() => { window.print(); track("match_exported", { format: "pdf" }); }}
                 className="flex items-center gap-1.5 rounded-lg border border-black/10 bg-white/60 px-2.5 py-1.5 text-[10px] font-medium text-m-ink-2 hover:border-m-sage/30 hover:text-m-sage transition-colors"
               >
                 导出 PDF

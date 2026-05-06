@@ -50,3 +50,33 @@ export async function saveGeneratedResume(
     console.warn('[saveGeneratedResume] 入库失败（不影响使用）:', e);
   }
 }
+
+const PAGE_SIZE = 20;
+
+export async function fetchMoreAssessments(offset: number) {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from('assessments')
+      .select('id, job_description, evaluation_result, created_at')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1);
+    return data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchMoreResumes(offset: number) {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from('generated_resumes')
+      .select('id, final_content, created_at')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1);
+    return data ?? [];
+  } catch {
+    return [];
+  }
+}

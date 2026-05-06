@@ -9,10 +9,23 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/';
+  const error = searchParams.get('error_description');
+
+  // 邮件链接中携带错误（如链接过期）→ 跳登录页并附带提示
+  if (error) {
+    const loginUrl = new URL('/login', origin);
+    loginUrl.searchParams.set('error', error);
+    return NextResponse.redirect(loginUrl);
+  }
 
   if (code) {
     const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+    if (exchangeError) {
+      const loginUrl = new URL('/login', origin);
+      loginUrl.searchParams.set('error', '确认链接已失效，请重新注册或登录');
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   return NextResponse.redirect(new URL(next, origin));
